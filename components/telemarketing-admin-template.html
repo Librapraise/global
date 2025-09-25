@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dialer Admin – Light</title>
+  <style>
+    :root{
+      --bg:#f6f8fb; 
+      --surface:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --border:#e5e7eb;
+      --brand:#1ea7ff; /* light brand */
+      --brand-600:#1284d6;
+      --success:#10b981;
+      --warn:#f59e0b;
+      --danger:#ef4444;
+      --radius:16px;
+      --shadow:0 10px 30px rgba(15,23,42,.06);
+      --shadow-sm:0 4px 16px rgba(15,23,42,.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial}
+
+    .layout{display:grid;grid-template-columns:1fr;grid-template-rows:auto 1fr;grid-template-areas:"top" "main";height:100vh}
+
+    /* Sidebar */
+    .sidebar{grid-area:side;background:linear-gradient(180deg,#ffffff,#f8fbff);border-right:1px solid var(--border);padding:18px 14px;display:flex;flex-direction:column;gap:14px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:18px}
+    .brand .logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--brand),#7ed8ff)}
+    nav{display:grid;gap:6px}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;color:var(--text);text-decoration:none;border:1px solid transparent}
+    .nav-item:hover{background:#f2f8ff;border-color:#dbeafe}
+    .nav-item.active{background:#e9f5ff;border-color:#bfdbfe}
+    .sep{height:1px;background:var(--border);margin:10px 0}
+
+    /* Topbar */
+    .topbar{grid-area:top;background:var(--surface);border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;padding:12px 18px;box-shadow:var(--shadow-sm)}
+    .search{display:flex;gap:10px}
+    .search input{width:380px;max-width:55vw;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:#fbfdff}
+    .top-actions{display:flex;gap:10px;align-items:center}
+    .btn{border:1px solid var(--border);background:#ffffff;border-radius:12px;padding:10px 12px;cursor:pointer}
+    .btn-primary{background:linear-gradient(180deg,var(--brand),var(--brand-600));color:#fff;border:0}
+    .avatar{width:34px;height:34px;border-radius:50%;background:#e2e8f0}
+
+    /* Main */
+    .main{grid-area:main;overflow:auto;padding:18px}
+    .grid{display:grid;gap:16px}
+    .cards{display:grid;gap:16px;grid-template-columns:repeat(4,1fr)}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .card .hd{padding:12px 14px;border-bottom:1px solid var(--border);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-size:12px}
+    .card .bd{padding:14px}
+    .kpi{display:flex;justify-content:space-between;align-items:center}
+    .kpi strong{font-size:28px}
+    .kpi small{color:var(--muted)}
+
+    .two{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+
+    /* Chart placeholder */
+    .chart{height:240px;border:1px dashed var(--border);border-radius:12px;display:grid;place-items:center;color:var(--muted)}
+
+    /* Tables */
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--border)}
+    thead th{font-size:12px;color:var(--muted);text-align:left;text-transform:uppercase;letter-spacing:.06em}
+    tbody tr:hover{background:#f9fbff}
+    .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid var(--border);background:#f8fafc}
+    .tag.ok{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
+    .tag.warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
+
+    /* Settings forms */
+    .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    label{font-size:12px;color:var(--muted)}
+    input[type="text"], input[type="number"], select, textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#ffffff}
+    textarea{min-height:120px}
+    .switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+    .switch input{display:none}
+    .switch .slider{width:44px;height:26px;border-radius:999px;background:#e2e8f0;position:relative;border:1px solid var(--border)}
+    .switch .slider::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:var(--shadow-sm);transition:all .2s}
+    .switch input:checked + .slider{background:linear-gradient(180deg,var(--brand),var(--brand-600));border:0}
+    .switch input:checked + .slider::after{transform:translateX(18px)}
+
+    .toolbar{display:flex;gap:10px;align-items:center}
+    .toolbar .sp{flex:1}
+
+    .pill{padding:6px 10px;border-radius:999px;background:#eef6ff;border:1px solid #cfe8ff;color:#0b3b7a;font-weight:600;font-size:12px}
+
+    .muted{color:var(--muted)}
+
+    /* User Management tokens */
+    .token-list{display:flex;flex-wrap:wrap;gap:6px}
+    .token{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#eef2ff;border:1px solid #c7d2fe}
+    .token button{border:0;background:transparent;cursor:pointer;font-size:14px;line-height:1}
+    .add-number{display:flex;gap:8px;margin-top:8px}
+    .add-number input{flex:1}
+
+    /* Bottom split: compact UM left, script/lead mgmt right */
+    .bottom-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+    .right-stack{display:grid;gap:16px}
+
+    /* Modal viewer */
+    .modal{position:fixed;inset:0;display:none}
+    .modal.active{display:block}
+    .modal .backdrop{position:absolute;inset:0;background:rgba(15,23,42,.35)}
+    .modal .panel{position:absolute;top:8vh;left:50%;transform:translateX(-50%);width:min(900px,92vw);max-height:84vh;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column}
+    .modal header{padding:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .modal main{padding:14px;overflow:auto}
+
+    @media (max-width:1100px){.bottom-grid{grid-template-columns:1fr}}
+
+    @media (max-width:1200px){.cards{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}}
+    @media (max-width:720px){.layout{grid-template-columns:1fr;grid-template-areas:"top" "main"}.sidebar{display:none}.cards{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- SIDEBAR -->
+    
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="search">
+        <input id="search" placeholder="Search leads, users, scripts…" />
+        <button class="btn">Filter</button>
+      </div>
+      <div class="top-actions">
+        <span class="pill" id="powerState">Power Dialer: ON</span>
+        <button class="btn" id="togglePower">Toggle</button>
+        <button class="btn-primary">New Campaign</button>
+      </div>
+      <div class="avatar" title="Admin"></div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="grid" id="view-dashboard">
+        <div class="cards">
+          <div class="card"><div class="hd">Calls Today</div><div class="bd kpi"><strong>482</strong><small class="tag ok">+8% vs. yesterday</small></div></div>
+          <div class="card"><div class="hd">Connection Rate</div><div class="bd kpi"><strong>29%</strong><small class="tag warn">Goal 32%</small></div></div>
+          <div class="card"><div class="hd">Sales</div><div class="bd kpi"><strong>37</strong><small class="tag ok">CR 7.7%</small></div></div>
+          <div class="card"><div class="hd">Avg Handle Time</div><div class="bd kpi"><strong>03:41</strong><small>± 00:22</small></div></div>
+        </div>
+        <div class="two">
+          <div class="card">
+            <div class="hd">Volume (Today)</div>
+            <div class="bd">
+              <div class="chart">(Sparkline / Bar chart placeholder)</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="hd">Team Leaderboard</div>
+            <div class="bd">
+              <table>
+                <thead><tr><th>Agent</th><th>Calls</th><th>Sales</th><th>Conn%</th><th>AHT</th></tr></thead>
+                <tbody>
+                  <tr><td>Alex</td><td>92</td><td>9</td><td>34%</td><td>03:12</td></tr>
+                  <tr><td>Sara</td><td>80</td><td>8</td><td>31%</td><td>03:55</td></tr>
+                  <tr><td>Michael</td><td>77</td><td>5</td><td>26%</td><td>04:11</td></tr>
+                  <tr><td>John</td><td>65</td><td>4</td><td>22%</td><td>04:05</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEADS -->
+      <div class="grid" id="view-leads" style="display:none">
+        <div class="card">
+          <div class="hd">Lead Queue</div>
+          <div class="bd">
+            <div class="toolbar">
+              <input placeholder="Search leads" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:12px"/>
+              <select><option>All Sources</option><option>Google Ads</option><option>Website</option><option>Referral</option></select>
+              <select><option>Status: Any</option><option>New</option><option>Warm</option><option>Hot</option></select>
+              <button class="btn">Export CSV</button>
+            </div>
+            <div style="height:10px"></div>
+            <table>
+              <thead><tr><th>Name</th><th>Phone</th><th>Source</th><th>Status</th><th>Last Result</th><th>Owner</th><th></th></tr></thead>
+              <tbody id="leadTable">
+                <tr><td>Jane Smith</td><td>(305) 555‑1212</td><td>Website</td><td>New</td><td>No Answer</td><td>Alex</td><td><button class="btn">Open</button></td></tr>
+                <tr><td>Robert Lee</td><td>(954) 555‑8833</td><td>Google Ads</td><td>Warm</td><td>Answered</td><td>Sara</td><td><button class="btn">Open</button></td></tr>
+                <tr><td>Mary Cohen</td><td>(786) 555‑9981</td><td>Referral</td><td>Hot</td><td>Sales Made</td><td>Michael</td><td><button class="btn">Open</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- DISPOSITIONS -->
+      <div class="grid" id="view-dispositions" style="display:none">
+        <div class="card">
+          <div class="hd">Vicidial‑style Dispositions</div>
+          <div class="bd">
+            <div class="toolbar">
+              <div class="sp"></div>
+              <button class="btn" id="addDisp">Add Disposition</button>
+              <button class="btn-primary" id="saveDisp">Save</button>
+            </div>
+            <div style="height:10px"></div>
+            <table id="dispTable">
+              <thead><tr><th>Label</th><th>Code</th><th>Color</th><th>Active</th><th>Default</th><th></th></tr></thead>
+              <tbody>
+                <tr><td contenteditable>No Answer</td><td contenteditable>NO_ANSWER</td><td><input type="color" value="#94a3b8"/></td><td><input type="checkbox" checked/></td><td><input type="radio" name="defaultDisp"/></td><td><button class="btn">Delete</button></td></tr>
+                <tr><td contenteditable>Answered</td><td contenteditable>ANSWERED</td><td><input type="color" value="#60a5fa"/></td><td><input type="checkbox" checked/></td><td><input type="radio" name="defaultDisp"/></td><td><button class="btn">Delete</button></td></tr>
+                <tr><td contenteditable>Sales Made</td><td contenteditable>SALE_MADE</td><td><input type="color" value="#34d399"/></td><td><input type="checkbox" checked/></td><td><input type="radio" name="defaultDisp" checked/></td><td><button class="btn">Delete</button></td></tr>
+                <tr><td contenteditable>Asshole</td><td contenteditable>ASSHOLE</td><td><input type="color" value="#f87171"/></td><td><input type="checkbox" checked/></td><td><input type="radio" name="defaultDisp"/></td><td><button class="btn">Delete</button></td></tr>
+                <tr><td contenteditable>Secretary</td><td contenteditable>SECRETARY</td><td><input type="color" value="#fbbf24"/></td><td><input type="checkbox" checked/></td><td><input type="radio" name="defaultDisp"/></td><td><button class="btn">Delete</button></td></tr>
+              </tbody>
+            </table>
+            <div class="muted" style="margin-top:8px">Tip: use these exact codes in the agent app to keep analytics aligned.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCRIPTS -->
+      <div class="grid" id="view-scripts" style="display:none">
+        <div class="card">
+          <div class="hd">Call Scripts</div>
+          <div class="bd">
+            <div class="form-grid">
+              <div>
+                <label>Script Name</label>
+                <input id="scriptName" placeholder="Roofing – Inspection Close"/>
+              </div>
+              <div>
+                <label>Category</label>
+                <select id="scriptCategory"><option>General</option><option>Roofing</option><option>Windows</option><option>Insurance</option></select>
+              </div>
+              <div>
+                <label>Active</label><br />
+                <label class="switch"><input id="scriptActive" type="checkbox" checked><span class="slider"></span></label>
+              </div>
+            </div>
+            <div style="height:10px"></div>
+            <label>Body</label>
+            <textarea id="scriptBody">Intro: Hi {FirstName}, Maxwell from Y12.AI…</textarea>
+            <div style="height:10px"></div>
+            <div class="toolbar"><div class="sp"></div><button class="btn">Preview</button><button class="btn-primary">Save Script</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div class="grid" id="view-users" style="display:none">
+        <div class="card">
+          <div class="hd">Users</div>
+          <div class="bd">
+            <div class="toolbar">
+              <button class="btn">Invite User</button>
+              <div class="sp"></div>
+              <select><option>All Roles</option><option>Agent</option><option>Manager</option><option>Admin</option></select>
+            </div>
+            <div style="height:8px"></div>
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Teams</th><th></th></tr></thead>
+              <tbody>
+                <tr><td>Alex Rivera</td><td>alex@y12.ai</td><td><select><option>Agent</option><option selected>Manager</option><option>Admin</option></select></td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td>Miami‑A</td><td><button class="btn">Edit</button></td></tr>
+                <tr><td>Sara Cohen</td><td>sara@y12.ai</td><td><select><option selected>Agent</option><option>Manager</option><option>Admin</option></select></td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td><td>Miami‑A</td><td><button class="btn">Edit</button></td></tr>
+                <tr><td>Michael Lee</td><td>mlee@y12.ai</td><td><select><option selected>Agent</option><option>Manager</option><option>Admin</option></select></td><td><label class="switch"><input type="checkbox"><span class="slider"></span></label></td><td>Miami‑B</td><td><button class="btn">Edit</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TEAMS -->
+      <div class="grid" id="view-teams" style="display:none">
+        <div class="card">
+          <div class="hd">Teams & Routing</div>
+          <div class="bd">
+            <div class="form-grid">
+              <div>
+                <label>Team Name</label>
+                <input placeholder="Miami‑A"/>
+              </div>
+              <div>
+                <label>Routing Strategy</label>
+                <select><option>Round Robin</option><option>Most Available</option><option>Top Performer</option></select>
+              </div>
+              <div>
+                <label>Max Concurrent Calls / Agent</label>
+                <input type="number" value="1" min="1" max="5"/>
+              </div>
+            </div>
+            <div style="height:10px"></div>
+            <table>
+              <thead><tr><th>Agent</th><th>Skill</th><th>Priority</th><th></th></tr></thead>
+              <tbody>
+                <tr><td>Alex Rivera</td><td>Insurance</td><td><input type="number" value="10"/></td><td><button class="btn">Remove</button></td></tr>
+                <tr><td>Sara Cohen</td><td>Windows</td><td><input type="number" value="8"/></td><td><button class="btn">Remove</button></td></tr>
+              </tbody>
+            </table>
+            <div class="toolbar" style="margin-top:8px"><button class="btn">Add Agent</button><div class="sp"></div><button class="btn-primary">Save Team</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIALER SETTINGS -->
+      <div class="grid" id="view-dialer" style="display:none">
+        <div class="card">
+          <div class="hd">Dialer Settings</div>
+          <div class="bd">
+            <div class="form-grid">
+              <div>
+                <label>Mode</label>
+                <select id="mode"><option>Power</option><option>Progressive</option><option>Preview</option></select>
+              </div>
+              <div>
+                <label>Calls per Agent (pace)</label>
+                <input type="number" id="pace" value="2" min="1" max="5"/>
+              </div>
+              <div>
+                <label>Max Ring Seconds</label>
+                <input type="number" value="22"/>
+              </div>
+              <div>
+                <label>Wrap‑up Seconds</label>
+                <input type="number" value="15"/>
+              </div>
+              <div>
+                <label>Retry Attempts</label>
+                <input type="number" value="3"/>
+              </div>
+              <div>
+                <label>Retry Delay (min)</label>
+                <input type="number" value="30"/>
+              </div>
+              <div>
+                <label>DNC Enforcement</label><br />
+                <label class="switch"><input id="dnc" type="checkbox" checked><span class="slider"></span></label>
+              </div>
+              <div>
+                <label>Caller ID Pool</label>
+                <input placeholder="+13055551212, +17865559898"/>
+              </div>
+              <div>
+                <label>Allowed Time Window</label>
+                <input placeholder="09:00-20:00 (local)"/>
+              </div>
+            </div>
+            <div style="height:10px"></div>
+            <div class="toolbar"><button class="btn">Test Pace</button><div class="sp"></div><button class="btn-primary">Save Settings</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INTEGRATIONS -->
+      <div class="grid" id="view-integrations" style="display:none">
+        <div class="card"><div class="hd">Integrations</div><div class="bd">
+          <table>
+            <thead><tr><th>Service</th><th>Status</th><th>Details</th><th></th></tr></thead>
+            <tbody>
+              <tr><td>Telnyx</td><td><span class="tag ok">Connected</span></td><td>Outbound trunk US‑1</td><td><button class="btn">Configure</button></td></tr>
+              <tr><td>Twilio</td><td><span class="tag">Disconnected</span></td><td>—</td><td><button class="btn">Connect</button></td></tr>
+              <tr><td>Krayin CRM</td><td><span class="tag ok">Connected</span></td><td>Pipeline: Roofing</td><td><button class="btn">Open</button></td></tr>
+            </tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <!-- AUDIT -->
+      <div class="grid" id="view-audit" style="display:none">
+        <div class="card"><div class="hd">Audit Log</div><div class="bd">
+          <table>
+            <thead><tr><th>When</th><th>User</th><th>Action</th><th>Target</th><th>Details</th></tr></thead>
+            <tbody id="auditTable">
+              <tr><td>Today 14:12</td><td>Admin</td><td>Updated</td><td>Dialer Pace</td><td>2 → 3</td></tr>
+              <tr><td>Today 11:02</td><td>Sara</td><td>Disposition</td><td>Lead #19302</td><td>SALE_MADE</td></tr>
+              <tr><td>Yesterday 16:30</td><td>Alex</td><td>Created</td><td>Script</td><td>Insurance – Close</td></tr>
+            </tbody>
+          </table>
+        </div></div>
+      </div>
+      <!-- USER MANAGEMENT + SCRIPT/LEADS (Bottom) -->
+      <div class="bottom-grid" id="admin-bottom">
+        <!-- LEFT: Compact User Management -->
+        <div class="card">
+          <div class="hd">User Management</div>
+          <div class="bd">
+            <div class="toolbar" style="margin-bottom:8px">
+              <input id="umFilter" placeholder="Filter users" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:12px"/>
+              <div class="sp"></div>
+              <button class="btn-primary" id="umSaveAll">Save All</button>
+            </div>
+            <table>
+              <thead><tr><th>User</th><th>Numbers</th><th>Script</th><th>Lead Lists</th><th></th></tr></thead>
+              <tbody id="umTable">
+                <tr data-user="Alex Rivera">
+                  <td>Alex Rivera</td>
+                  <td>
+                    <div class="token-list">
+                      <span class="token" data-num="+1 305 555 1212">+1 305 555 1212 <button type="button" data-remove>&times;</button></span>
+                      <span class="token" data-num="+1 786 555 3399">+1 786 555 3399 <button type="button" data-remove>&times;</button></span>
+                    </div>
+                    <div class="add-number"><input type="text" placeholder="+1 305 555 0000"/><button class="btn">Add</button></div>
+                  </td>
+                  <td>
+                    <select class="scriptSel">
+                      <option selected>Insurance – Close</option>
+                      <option>Windows – Pitch</option>
+                      <option>Roof – Inspection</option>
+                    </select>
+                  </td>
+                  <td>
+                    <select multiple size="4" class="leadLists">
+                      <option selected>Roofing</option>
+                      <option selected>Insurance</option>
+                      <option>Windows</option>
+                      <option>General</option>
+                    </select>
+                  </td>
+                  <td><button class="btn-primary" data-save-user>Save</button></td>
+                </tr>
+                <tr data-user="Sara Cohen">
+                  <td>Sara Cohen</td>
+                  <td>
+                    <div class="token-list">
+                      <span class="token" data-num="+1 954 555 8833">+1 954 555 8833 <button type="button" data-remove>&times;</button></span>
+                    </div>
+                    <div class="add-number"><input type="text" placeholder="+1 954 555 0000"/><button class="btn">Add</button></div>
+                  </td>
+                  <td>
+                    <select class="scriptSel">
+                      <option>Insurance – Close</option>
+                      <option selected>Windows – Pitch</option>
+                      <option>Roof – Inspection</option>
+                    </select>
+                  </td>
+                  <td>
+                    <select multiple size="4" class="leadLists">
+                      <option>Roofing</option>
+                      <option selected>Windows</option>
+                      <option>Insurance</option>
+                      <option selected>General</option>
+                    </select>
+                  </td>
+                  <td><button class="btn-primary" data-save-user>Save</button></td>
+                </tr>
+                <tr data-user="Michael Lee">
+                  <td>Michael Lee</td>
+                  <td>
+                    <div class="token-list">
+                      <span class="token" data-num="+1 786 555 9981">+1 786 555 9981 <button type="button" data-remove>&times;</button></span>
+                    </div>
+                    <div class="add-number"><input type="text" placeholder="+1 786 555 0000"/><button class="btn">Add</button></div>
+                  </td>
+                  <td>
+                    <select class="scriptSel">
+                      <option>Insurance – Close</option>
+                      <option>Windows – Pitch</option>
+                      <option selected>Roof – Inspection</option>
+                    </select>
+                  </td>
+                  <td>
+                    <select multiple size="4" class="leadLists">
+                      <option selected>Roofing</option>
+                      <option>Windows</option>
+                      <option>Insurance</option>
+                      <option>General</option>
+                    </select>
+                  </td>
+                  <td><button class="btn-primary" data-save-user>Save</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- RIGHT: Script Management & Lead Lists -->
+        <div class="right-stack">
+          <div class="card">
+            <div class="hd">Script Management</div>
+            <div class="bd">
+              <div class="toolbar" style="margin-bottom:8px">
+                <input id="scriptUploadName" placeholder="Script name" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:12px"/>
+                <input type="file" id="scriptUploadFile" accept=".txt,.md,.html"/>
+                <button class="btn-primary" id="scriptUploadBtn">Upload Script</button>
+              </div>
+              <table>
+                <thead><tr><th>Name</th><th>Updated</th><th>Assigned</th><th></th></tr></thead>
+                <tbody id="scriptLibTable">
+                  <tr><td>Insurance – Close</td><td>Today 09:42</td><td>7 users</td><td><button class="btn" data-open-script="Insurance – Close">Open</button></td></tr>
+                  <tr><td>Windows – Pitch</td><td>Yesterday 16:10</td><td>3 users</td><td><button class="btn" data-open-script="Windows – Pitch">Open</button></td></tr>
+                  <tr><td>Roof – Inspection</td><td>Mon 12:01</td><td>5 users</td><td><button class="btn" data-open-script="Roof – Inspection">Open</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="hd">Lead Lists</div>
+            <div class="bd">
+              <div class="toolbar" style="margin-bottom:8px">
+                <input id="leadUploadName" placeholder="List name (e.g., Roofing‑Miami‑A)" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:12px"/>
+                <input type="file" id="leadUploadFile" accept=".csv"/>
+                <button class="btn-primary" id="leadUploadBtn">Upload CSV</button>
+              </div>
+              <table>
+                <thead><tr><th>Name</th><th>Rows</th><th>Created</th><th>Assigned</th><th></th></tr></thead>
+                <tbody id="leadLibTable">
+                  <tr><td>Roofing</td><td>1,204</td><td>Last week</td><td>Team Miami‑A</td><td><button class="btn" data-open-leads="Roofing">Open</button></td></tr>
+                  <tr><td>Windows</td><td>742</td><td>Mon</td><td>Team Miami‑B</td><td><button class="btn" data-open-leads="Windows">Open</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Viewer Modal -->
+      <div class="modal" id="viewerModal">
+        <div class="backdrop" data-close></div>
+        <div class="panel">
+          <header>
+            <div><strong id="viewerTitle">Viewer</strong></div>
+            <div><button class="btn" data-close>Close</button></div>
+          </header>
+          <main id="viewerBody"></main>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Simple router for views (sidebar removed; safe no-ops)
+    const views = ["dashboard","leads","dispositions","scripts","users","teams","dialer","integrations","audit"];
+    const show = (v) => {
+      views.forEach(id => {
+        const pane = document.getElementById(`view-${id}`); if(pane) pane.style.display = (id===v?"grid":"none");
+        document.querySelectorAll(`.nav-item[data-view="${id}"]`).forEach(a=>a.classList.toggle('active', id===v));
+      });
+      window.location.hash = v;
+    };
+    show(location.hash.replace('#','')||'dashboard');
+
+    // Power toggle (visual only)
+    let on = true; const pill = document.getElementById('powerState');
+    const togglePowerBtn = document.getElementById('togglePower');
+    if(togglePowerBtn) togglePowerBtn.onclick = ()=>{
+      on = !on; pill.textContent = `Power Dialer: ${on? 'ON':'OFF'}`; pill.style.background = on? '#ecfdf5':'#fffbeb'; pill.style.borderColor = on? '#a7f3d0':'#fde68a'; pill.style.color = on? '#065f46':'#92400e';
+    };
+
+    // Quick search filter on dashboard tables (mock behavior)
+    const globalSearch = document.getElementById('search');
+    if(globalSearch){
+      globalSearch.addEventListener('input', (e)=>{
+        const q=e.target.value.toLowerCase();
+        document.querySelectorAll('#leadTable tr').forEach(tr=>{ tr.style.display = tr.innerText.toLowerCase().includes(q) ? '' : 'none'; });
+        document.querySelectorAll('#auditTable tr').forEach(tr=>{ tr.style.display = tr.innerText.toLowerCase().includes(q) ? '' : 'none'; });
+      });
+    }
+
+    // ---- User Management (left) ----
+    function serializeUMRow(row){
+      const user = row.dataset.user;
+      const numbers = [...row.querySelectorAll('.token')].map(t => t.dataset.num || t.firstChild.textContent.trim());
+      const script = row.querySelector('.scriptSel')?.value || '';
+      const lists = row.querySelector('.leadLists') ? [...row.querySelector('.leadLists').selectedOptions].map(o=>o.value) : [];
+      return { user, numbers, script, lead_lists: lists };
+    }
+    function addToken(listEl, num){
+      const span = document.createElement('span');
+      span.className = 'token';
+      span.dataset.num = num;
+      span.innerHTML = `${num} <button type="button" data-remove>&times;</button>`;
+      listEl.appendChild(span);
+    }
+    const umFilter = document.getElementById('umFilter');
+    if(umFilter){ umFilter.addEventListener('input', e=>{
+      const q=e.target.value.toLowerCase();
+      document.querySelectorAll('#umTable tr').forEach(tr=>{ tr.style.display = tr.innerText.toLowerCase().includes(q) ? '' : 'none'; });
+    }); }
+    document.querySelectorAll('#umTable tr').forEach(row=>{
+      const input = row.querySelector('.add-number input');
+      const btn = row.querySelector('.add-number button');
+      const list = row.querySelector('.token-list');
+      if(btn) btn.addEventListener('click', ()=>{ const val=(input.value||'').trim(); if(!val) return; addToken(list,val); input.value=''; });
+      row.addEventListener('click', (e)=>{ if(e.target.matches('[data-remove]')){ e.target.closest('.token').remove(); } });
+      const saveBtn = row.querySelector('[data-save-user]');
+      if(saveBtn) saveBtn.addEventListener('click', ()=>{ console.log('USER_MGMT_SAVE', serializeUMRow(row)); alert('Saved (mock) – check console.'); });
+    });
+    const saveAllUM = document.getElementById('umSaveAll');
+    if(saveAllUM){ saveAllUM.addEventListener('click', ()=>{ const rows=[...document.querySelectorAll('#umTable tr')].map(serializeUMRow); console.log('USER_MGMT_SAVE_ALL', rows); alert('All users saved (mock). Check console.'); }); }
+
+    // ---- Script Management (right) ----
+    const scriptStore = {
+      'Insurance – Close': 'Intro: Hi {FirstName}, this is Maxwell from Y12.AI…',
+      'Windows – Pitch': 'Frame the value fast. Pain → urgency → slot.',
+      'Roof – Inspection': 'Qualify → schedule inspection → confirm address.'
+    };
+    function addScriptRow(name, updated='Just now', assigned='0 users', content=''){
+      if(content) scriptStore[name] = content;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${name}</td><td>${updated}</td><td>${assigned}</td><td><button class="btn" data-open-script="${name}">Open</button></td>`;
+      document.getElementById('scriptLibTable').prepend(tr);
+    }
+    const sName = document.getElementById('scriptUploadName');
+    const sFile = document.getElementById('scriptUploadFile');
+    const sBtn = document.getElementById('scriptUploadBtn');
+    if(sBtn){ sBtn.addEventListener('click', ()=>{
+      const name = (sName.value || (sFile.files[0]?.name ?? '')).trim() || 'Untitled Script';
+      if(sFile.files[0]){
+        const fr = new FileReader();
+        fr.onload = () => { addScriptRow(name, 'Just now', '0 users', String(fr.result)); };
+        fr.readAsText(sFile.files[0]);
+      }else{
+        addScriptRow(name);
+      }
+      sName.value=''; if(sFile) sFile.value='';
+    }); }
+
+    // ---- Lead Lists (right) ----
+    const leadListStore = {};
+    function addLeadRow(name, rowsCount=0, created='Just now', assigned='—', rowsData=null){
+      if(rowsData) leadListStore[name] = rowsData;
+      const tr = document.createElement('tr');
+      const rowsFmt = rowsCount.toLocaleString();
+      tr.innerHTML = `<td>${name}</td><td>${rowsFmt}</td><td>${created}</td><td>${assigned}</td><td><button class=\"btn\" data-open-leads=\"${name}\">Open</button></td>`;
+      document.getElementById('leadLibTable').prepend(tr);
+    }
+    const lName = document.getElementById('leadUploadName');
+    const lFile = document.getElementById('leadUploadFile');
+    const lBtn = document.getElementById('leadUploadBtn');
+    if(lBtn){ lBtn.addEventListener('click', ()=>{
+      const name = (lName.value || (lFile.files[0]?.name ?? '')).replace(/\.(csv)$/i,'').trim() || 'Untitled List';
+      if(lFile.files[0]){
+        const fr = new FileReader();
+        fr.onload = () => {
+          const text = String(fr.result);
+          const lines = text.split(/
+?
+/).filter(Boolean);
+          const header = lines.shift()?.split(',') ?? [];
+          const rows = lines.map(line => line.split(','));
+          addLeadRow(name, rows.length, 'Just now', '—', { header, rows });
+        };
+        fr.readAsText(lFile.files[0]);
+      }else{
+        addLeadRow(name, 0);
+      }
+      lName.value=''; if(lFile) lFile.value='';
+    }); }
+
+    // ---- Modal viewer ----
+    const modal = document.getElementById('viewerModal');
+    const viewerTitle = document.getElementById('viewerTitle');
+    const viewerBody = document.getElementById('viewerBody');
+    function openModal(title, html){ viewerTitle.textContent = title; viewerBody.innerHTML = html; modal.classList.add('active'); }
+    function closeModal(){ modal.classList.remove('active'); viewerBody.innerHTML=''; }
+    modal?.addEventListener('click', (e)=>{ if(e.target.matches('[data-close]') || e.target.classList.contains('backdrop')) closeModal(); });
+
+    // Delegated handlers for opening viewers
+    document.getElementById('scriptLibTable').addEventListener('click', (e)=>{
+      const btn = e.target.closest('[data-open-script]'); if(!btn) return;
+      const name = btn.getAttribute('data-open-script');
+      const body = scriptStore[name] || '<em>No content stored for this script.</em>';
+      openModal(`Script: ${name}`, `<pre style=\"white-space:pre-wrap;word-break:break-word;background:#f8fafc;border:1px solid var(--border);padding:12px;border-radius:12px\">${body.replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}</pre>`);
+    });
+    document.getElementById('leadLibTable').addEventListener('click', (e)=>{
+      const btn = e.target.closest('[data-open-leads]'); if(!btn) return;
+      const name = btn.getAttribute('data-open-leads');
+      const data = leadListStore[name];
+      if(!data){ openModal(`Lead List: ${name}`, '<em>No rows cached (demo).</em>'); return; }
+      const thead = `<thead><tr>${data.header.map(h=>`<th>${h}</th>`).join('')}</tr></thead>`;
+      const rowsHtml = data.rows.slice(0,200).map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
+      const table = `<div style=\"max-height:60vh;overflow:auto\"><table style=\"width:100%;border-collapse:separate;border-spacing:0\">${thead}<tbody>${rowsHtml}</tbody></table></div><div class=\"muted\" style=\"margin-top:8px\">Showing up to 200 rows.</div>`;
+      openModal(`Lead List: ${name}`, table);
+    });
+  </script>
+</body>
+</html>

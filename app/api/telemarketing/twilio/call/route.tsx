@@ -30,8 +30,14 @@ export async function POST(request: NextRequest) {
     }
 
     const requestBody = await request.json()
-    const { phoneNumber, leadId, connectionMode, userConference, conferenceId } = requestBody
-    console.log("[v0] Call API: Request data:", { phoneNumber, leadId, connectionMode, userConference, conferenceId })
+    const { phoneNumber, leadId, connectionMode, conferenceId, agentBrowserConnection } = requestBody
+    console.log("[v0] Call API: Request data:", { 
+      phoneNumber, 
+      leadId, 
+      connectionMode, 
+      conferenceId,
+      agentBrowserConnection 
+    })
 
     if (!phoneNumber) {
       return NextResponse.json({ error: "Phone number is required" }, { status: 400 })
@@ -113,18 +119,36 @@ export async function POST(request: NextRequest) {
     console.log("[v0] Call API: Base URL:", normalizedBaseUrl)
     console.log("[v0] Call API: Status Callback URL:", statusUrl)
 
-    console.log("[v0] Call API: Using TwiML webhook for mode:", connectionMode)
-
     let twimlContent = ""
     let callMethod = ""
 
-    if (connectionMode === "conference" && conferenceId) {
-      // Conference mode - join specific conference room
+    // SINGLE CALL MODE: Make one call to customer that joins conference
+    // Agent will join the same conference via browser (not a second phone call)
+    if (connectionMode === "conference" && conferenceId && agentBrowserConnection) {
+      console.log("[v0] Call API: Single call mode - customer to conference, agent via browser")
+      
+      // Customer call joins conference and starts it - no hold music or messages
       twimlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="alice">Connecting you to the conference, please hold.</Say>
   <Dial timeout="30">
-    <Conference startConferenceOnEnter="false" endConferenceOnExit="false" waitUrl="">${conferenceId}</Conference>
+    <Conference 
+      startConferenceOnEnter="true" 
+      endConferenceOnExit="true" 
+      waitUrl=""
+      beep="false">${conferenceId}</Conference>
+  </Dial>
+</Response>`
+      callMethod = "Twiml"
+    } else if (connectionMode === "conference" && conferenceId) {
+      // Legacy conference mode - join specific conference room
+      twimlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Dial timeout="30">
+    <Conference 
+      startConferenceOnEnter="false" 
+      endConferenceOnExit="false" 
+      waitUrl=""
+      beep="false">${conferenceId}</Conference>
   </Dial>
 </Response>`
       callMethod = "Twiml"
@@ -132,7 +156,6 @@ export async function POST(request: NextRequest) {
       // Direct mode - direct phone-to-phone call
       twimlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="alice">Connecting your call, please hold.</Say>
   <Dial timeout="30" callerId="${fromNumber}">
     <Number>${phoneNumber}</Number>
   </Dial>
@@ -152,6 +175,8 @@ export async function POST(request: NextRequest) {
 
     callParams.append(callMethod, twimlContent)
 
+    console.log("[v0] Call API: Making SINGLE call to customer...")
+    
     const twilioResponse = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls.json`, {
       method: "POST",
       headers: {
@@ -183,7 +208,7 @@ export async function POST(request: NextRequest) {
       try {
         await sql`
           INSERT INTO lead_interactions (lead_id, user_id, interaction_type, notes, created_at)
-          VALUES (${leadId}, ${currentUser.id}, 'call_initiated', ${"Call initiated via Twilio: " + twilioData.sid}, NOW())
+          VALUES (${leadId}, ${currentUser.id}, 'call_initiated', ${"Single call initiated via Twilio: " + twilioData.sid}, NOW())
         `.catch((error) => {
           console.log("[v0] Call API: lead_interactions table may not exist:", error.message)
         })
@@ -193,13 +218,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log("[v0] Call API: Call initiated successfully:", twilioData.sid)
+    console.log("[v0] Call API: SINGLE call initiated successfully:", twilioData.sid)
+    console.log("[v0] Call API: Conference ID for agent browser connection:", conferenceId)
 
     return NextResponse.json({
       success: true,
       callSid: twilioData.sid,
+      conferenceId: conferenceId,  // Return conference ID for agent browser connection
       status: twilioData.status,
-      message: "Call initiated successfully",
+      message: agentBrowserConnection 
+        ? "Single call initiated - agent will connect via browser" 
+        : "Call initiated successfully",
       connectionMode: connectionMode || "conference",
     })
   } catch (error) {
